@@ -1,0 +1,35 @@
+Write-Host "🚀 Starting Buroq Billing Installation..." -ForegroundColor Cyan
+
+# 1. Check Node.js
+if (!(Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Error "Node.js is not installed. Please install Node.js first."
+    exit 1
+}
+
+# 2. Install Dependencies
+Write-Host "`n📦 Installing dependencies..." -ForegroundColor Yellow
+npm install
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to install dependencies."
+    exit 1
+}
+
+# 3. Setup Environment Variables
+if (!(Test-Path ".env")) {
+    if (Test-Path ".env.local.example") {
+        Write-Host "`n⚙️  Creating .env from .env.local.example..." -ForegroundColor Yellow
+        Copy-Item ".env.local.example" ".env"
+    }
+    else {
+        Write-Warning "No .env.local.example found. Creating default .env..."
+        Set-Content .env "DATABASE_URL=`"file:./dev.db`""
+    }
+}
+
+# 4. Setup Database
+Write-Host "`n🗄️  Setting up database..." -ForegroundColor Yellow
+npx prisma generate
+npx prisma db push
+
+Write-Host "`n✅ Installation Complete!" -ForegroundColor Green
+Write-Host "To start the application, run: npm run dev" -ForegroundColor Cyan

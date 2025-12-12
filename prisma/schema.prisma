@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  username       String   @unique
+  passwordHash   String
+  role           String   @default("viewer") // admin, agent, technician, staff, viewer
+  isTechnician   Boolean  @default(false)
+  isAgent        Boolean  @default(false) // Added for consistency with code usage
+  agentRate      Float    @default(0)
+  technicianRate Float    @default(0)
+  prefix         String   @default("")
+  fullName       String   @default("")
+  phone          String   @default("")
+  address        String   @default("")
+  agentNumber    String   @default("")
+  createdAt      DateTime @default(now())
+
+  // Relations
+  customersAsAgent      Customer[] @relation("AgentCustomers")
+  customersAsTechnician Customer[] @relation("TechnicianCustomers")
+  commissions           Commission[]
+  
+  language     String   @default("id")
+}
+
+model SystemMetric {
+  id        String   @id @default(cuid())
+  type      String   // 'cpu', 'temperature'
+  value     Float
+  metadata  String?
+  timestamp DateTime @default(now())
+
+  @@index([type, timestamp])
+}
+
+model Customer {
+  username       String   @id // Using username as ID to match current JSON structure
+  name           String   @default("")
+  address        String   @default("")
+  phone          String   @default("")
+  email          String   @default("")
+  customerNumber String?
+  agentId        String?
+  technicianId   String?
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  // Relations
+  agent      User? @relation("AgentCustomers", fields: [agentId], references: [id])
+  technician User? @relation("TechnicianCustomers", fields: [technicianId], references: [id])
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  username      String // No foreign key to Customer to allow payments even if customer deleted/missing (legacy support)
+  amount        Float
+  method        String   @default("cash") // cash, transfer, etc.
+  status        String   @default("pending") // pending, completed, postponed, merged
+  date          DateTime
+  month         Int // 0-11
+  year          Int
+  notes         String   @default("")
+
+  commissions Commission[]
+}
+
+model Commission {
+  id        String  @id @default(cuid())
+  paymentId String
+  userId    String
+  username  String
+  role      String // agent, technician
+  rate      Float
+  amount    Float
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  mikrotikId String?  // .id from Mikrotik logs
+  time      String?  // Original time string from Mikrotik
+  message   String
+  username  String?
+  status    String?
+  createdAt DateTime @default(now())
+}
+
+model Registration {
+  id             String   @id @default(cuid())
+  type           String   // register, edit, delete
+  status         String   @default("pending") // pending, approved, rejected
+  
+  // Identifier
+  username       String   // The primary identifier in the old system (target username for register, or req key)
+  targetUsername String?  // For edit/delete requests
+
+  // Applicant details (for display/record)
+  name           String?
+  address        String?
+  phone          String?
+  agentId        String?
+
+  // Registration Specifics
+  password       String?
+  profile        String?
+  service        String?
+  comment        String?
+  routerIds      String? // Stored as JSON string
+
+  // Edit Specifics
+  newValues      String? // JSON string
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SystemSetting {
+  key   String @id
+  value String
+}
