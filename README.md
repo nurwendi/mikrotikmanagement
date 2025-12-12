@@ -57,7 +57,7 @@ sudo apt-get install -y nodejs
 ### 3. Install & Setup Buroq Billing
 **Method A: Automatic (Recommended)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nurwendi/mikrotikbilling/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nurwendi/mikrotikbilling/master/install.sh | bash
 ```
 
 **Method B: Manual Step-by-Step**
@@ -117,7 +117,7 @@ chmod +x uninstall.sh
 
 ## 🪟 Windows Installation
 ```powershell
-iwr -useb https://raw.githubusercontent.com/nurwendi/mikrotikbilling/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/nurwendi/mikrotikbilling/master/install.ps1 | iex
 ```
 
 

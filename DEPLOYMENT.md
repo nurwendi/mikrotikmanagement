@@ -179,7 +179,7 @@ pm2 delete billing    # Remove from PM2
 
 ```bash
 cd /opt/billing
-git pull origin main
+git pull origin master
 npm install
 npm run build
 pm2 restart billing
