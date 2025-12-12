@@ -38,7 +38,7 @@ export default function BottomDock() {
         { href: '/offline', icon: WifiOff, label: 'Offline', roles: ['admin', 'partner', 'viewer', 'staff', 'agent', 'technician'] },
         { href: '/profiles', icon: Network, label: t('sidebar.profiles'), roles: ['admin'] },
         { href: '/system-users', icon: Users, label: t('sidebar.systemUsers'), roles: ['admin'] },
-        { href: '/settings', icon: Server, label: t('sidebar.connection'), roles: ['admin'] },
+        { href: '/routers', icon: Server, label: 'Routers', roles: ['admin'] },
         { href: '/backup', icon: Database, label: t('sidebar.backup'), roles: ['admin'] },
         { href: '/app-settings', icon: Settings, label: t('sidebar.appSettings'), roles: ['admin', 'partner', 'viewer', 'staff', 'agent', 'technician'] },
         { href: '/notifications', icon: Bell, label: t('sidebar.notifications'), roles: ['admin', 'partner', 'viewer', 'customer', 'staff', 'agent', 'technician'] },

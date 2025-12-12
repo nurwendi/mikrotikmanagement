@@ -22,7 +22,14 @@ async function getBillingSettings() {
             companyContact: '081234567890',
             invoiceFooter: 'Terima kasih atas kepercayaan Anda.',
             logoUrl: '',
-            autoDropDate: 10 // Day of month to auto-drop unpaid users
+            autoDropDate: 10, // Day of month to auto-drop unpaid users
+            isolir: {
+                poolName: 'DROPPOOL',
+                poolRange: '10.100.1.2-10.100.254',
+                gatewayIp: '10.100.1.1',
+                billingIp: '192.168.1.100',
+                appPort: '3000'
+            }
         };
     } catch (error) {
         return {

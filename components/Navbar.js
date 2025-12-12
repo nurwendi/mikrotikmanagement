@@ -68,7 +68,7 @@ export default function Navbar() {
 
     const settingsItems = [
         { href: '/app-settings', icon: Settings, label: 'App Settings' },
-        { href: '/settings', icon: Server, label: 'Connection' },
+        { href: '/routers', icon: Server, label: 'Routers' },
     ];
 
     return (

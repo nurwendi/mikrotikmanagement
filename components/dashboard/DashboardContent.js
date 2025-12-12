@@ -51,14 +51,18 @@ export default function DashboardContent() {
     const [temperatureHistory, setTemperatureHistory] = useState([]);
     const [cpuHistory, setCpuHistory] = useState([]);
     const [userRole, setUserRole] = useState(null);
+    const [username, setUsername] = useState('');
     const [loading, setLoading] = useState(true);
     const [lastUpdate, setLastUpdate] = useState(new Date());
 
-    // Fetch User Role
+    // Fetch User Role and Name
     useEffect(() => {
         fetch('/api/auth/me')
             .then(res => res.json())
-            .then(data => setUserRole(data.user.role))
+            .then(data => {
+                setUserRole(data.user.role);
+                setUsername(data.user.username);
+            })
             .catch(err => console.error('Failed to fetch user role', err));
     }, []);
 
@@ -292,7 +296,12 @@ export default function DashboardContent() {
         >
             {/* Header */}
             <motion.div variants={itemVariants} className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t('dashboard.title')}</h1>
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{t('dashboard.title')}</h1>
+                    <p className="text-lg text-gray-600 dark:text-gray-300 mt-1">
+                        Selamat datang <span className="font-semibold text-blue-600 dark:text-blue-400 capitalize">{username}</span>
+                    </p>
+                </div>
                 <div className="flex items-center gap-4">
                     <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
                         Last update: {lastUpdate.toLocaleTimeString()}

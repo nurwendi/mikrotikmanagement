@@ -49,3 +49,4 @@ reset_*.js
 generate-*.js
 
 /generated/prisma
+/node_portable

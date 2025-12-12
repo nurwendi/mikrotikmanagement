@@ -6,7 +6,7 @@ export async function middleware(request) {
     const { pathname } = request.nextUrl;
 
     // Allow access to login page, invoice page, and static assets
-    if (pathname.startsWith('/login') || pathname.startsWith('/invoice') || pathname.startsWith('/_next') || pathname.startsWith('/api/auth')) {
+    if (pathname.startsWith('/login') || pathname.startsWith('/invoice') || pathname.startsWith('/isolir') || pathname.startsWith('/_next') || pathname.startsWith('/api/auth')) {
         return NextResponse.next();
     }
 

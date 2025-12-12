@@ -280,7 +280,7 @@ export default function SystemUsersPage() {
             {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl p-6 rounded-lg w-full max-w-md shadow-2xl border border-white/20 dark:border-white/10 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl p-6 pb-24 rounded-lg w-full max-w-md shadow-2xl border border-white/20 dark:border-white/10 max-h-[90vh] overflow-y-auto">
                         <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
                             {editMode ? 'Edit User' : 'Add New User'}
                         </h2>
@@ -366,10 +366,10 @@ export default function SystemUsersPage() {
                                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                         className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                     >
-                                        <option value="viewer">Viewer (Read Only)</option>
-                                        <option value="editor">Editor (Can Edit)</option>
                                         <option value="admin">Admin (Full Access)</option>
+                                        <option value="editor">Editor (Can Edit)</option>
                                         <option value="staff">Staff (Agent/Technician)</option>
+                                        <option value="viewer">Viewer (Read Only)</option>
                                     </select>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         Determines what pages the user can access.
@@ -406,19 +406,7 @@ export default function SystemUsersPage() {
                                                 </div>
                                             )}
                                             {formData.isAgent && (
-                                                <div className="mt-2">
-                                                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400">User Prefix (e.g. 08)</label>
-                                                    <input
-                                                        type="text"
-                                                        value={formData.prefix ?? ''}
-                                                        onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
-                                                        className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                                                        placeholder="Optional"
-                                                    />
-                                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                                                        Auto-prepended to usernames created by this agent.
-                                                    </p>
-                                                </div>
+                                                <div className="hidden"></div>
                                             )}
                                         </div>
                                     </div>

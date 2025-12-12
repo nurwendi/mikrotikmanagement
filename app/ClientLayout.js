@@ -12,7 +12,8 @@ export default function ClientLayout({ children }) {
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
     const isInvoicePage = pathname.startsWith('/invoice');
-    const isPublicPage = isLoginPage || isInvoicePage;
+    const isIsolirPage = pathname.startsWith('/isolir');
+    const isPublicPage = isLoginPage || isInvoicePage || isIsolirPage;
 
     const variants = {
         hidden: { opacity: 0, x: -10, y: 0 },
