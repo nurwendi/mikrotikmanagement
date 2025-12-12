@@ -39,54 +39,87 @@ Buroq Billing is a modern, full-stack web application designed to streamline bil
 - **Components**: [Lucide React](https://lucide.dev/), [Framer Motion](https://www.framer.com/motion/), [Recharts](https://recharts.org/)
 - **Authentication**: Custom session-based auth with bcrypt hashing.
 
-## �️ Installation & Setup
+## 🐧 Installation for Debian/Ubuntu
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/nurwendi/NetFlow.git
-    cd NetFlow
-    ```
+### 1. Verification & Prerequisites
+Update your system and install necessary compatible tools:
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git unzip
+```
 
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
+### 2. Install Node.js (Version 20.x)
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
 
-3.  **Setup Database**
-    Initialize the SQLite database and apply migrations:
-    ```bash
-    npx prisma generate
-    npx prisma db push
-    ```
-
-4.  **Initial Configuration**
-    - The system creates a default admin user on first run if none exists:
-        - **Username**: `admin`
-        - **Password**: `admin`
-    - **Security Note**: Change this password immediately after logging in!
-
-5.  **Run the Development Server**
-    ```bash
-    npm run dev
-    ```
-
-## ⚡ Quick Start (One-Line Install)
-
-Get up and running immediately with our automated installers.
-
-### 🐧 Linux / Mac (Bash)
+### 3. Install & Setup Buroq Billing
+**Method A: Automatic (Recommended)**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nurwendi/mikrotikbilling/main/install.sh | bash
 ```
 
-### 🪟 Windows (PowerShell)
+**Method B: Manual Step-by-Step**
+```bash
+# 1. Clone Repository
+git clone https://github.com/nurwendi/mikrotikbilling.git
+cd mikrotikbilling
+
+# 2. Install Dependencies
+npm install
+
+# 3. Setup Database
+npx prisma generate
+npx prisma db push
+
+# 4. Run Application
+npm run dev
+```
+
+### 4. Setup Production (Optional using PM2)
+To run the application in the background and start automatically on boot:
+
+```bash
+# 1. Install PM2
+sudo npm install -g pm2
+
+# 2. Build for Production
+npm run build
+
+# 3. Start with PM2
+pm2 start npm --name "billing" -- start
+
+# 4. Save Startup Selection
+pm2 save
+pm2 startup
+```
+
+---
+
+## 🔄 Maintenance & Tools
+
+### Auto Update
+To update the application to the latest version (code & database):
+```bash
+chmod +x update.sh
+./update.sh
+```
+
+### Auto Remove / Reset
+To uninstall or reset the application (clears database and node_modules):
+```bash
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+---
+
+## 🪟 Windows Installation
 ```powershell
 iwr -useb https://raw.githubusercontent.com/nurwendi/mikrotikbilling/main/install.ps1 | iex
 ```
 
-### 🗑️ Uninstall / Reset
-**Linux**: `./uninstall.sh`
-**Windows**: `.\uninstall.ps1`
 
 ## ⚙️ Configuration
 
