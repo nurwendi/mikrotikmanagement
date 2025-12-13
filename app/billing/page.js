@@ -391,8 +391,76 @@ export default function BillingPage() {
         return sorted;
     };
 
+    const [selectedIds, setSelectedIds] = useState(new Set());
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            const allIds = getSortedPayments().map(p => p.id);
+            setSelectedIds(new Set(allIds));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    const handleSelectOne = (id) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const handleBulkDelete = async () => {
+        if (!confirm(`Are you sure you want to delete ${selectedIds.size} invoices?`)) return;
+
+        try {
+            const res = await fetch('/api/billing/payments', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: Array.from(selectedIds) })
+            });
+
+            if (res.ok) {
+                setPayments(prev => prev.filter(p => !selectedIds.has(p.id)));
+                setSelectedIds(new Set());
+                fetchData();
+            } else {
+                alert('Failed to delete items');
+            }
+        } catch (error) {
+            console.error('Bulk delete failed', error);
+        }
+    };
+
+    const handleBulkMarkPaid = async () => {
+        if (!confirm(`Mark ${selectedIds.size} invoices as PAID?`)) return;
+
+        try {
+            const res = await fetch('/api/billing/payments', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ids: Array.from(selectedIds),
+                    status: 'completed'
+                })
+            });
+
+            if (res.ok) {
+                fetchData();
+                setSelectedIds(new Set());
+            } else {
+                alert('Failed to update items');
+            }
+        } catch (error) {
+            console.error('Bulk update failed', error);
+        }
+    };
+
     const handleDeletePayment = async (id) => {
         if (!confirm('Apakah Anda yakin ingin menghapus invoice ini secara permanen?')) return;
+
 
         try {
             const res = await fetch('/api/billing/payments', {
@@ -746,6 +814,29 @@ Terima Kasih
                     </div>
                 )}
 
+                {/* Bulk Action Toolbar */}
+                {selectedIds.size > 0 && userRole === 'admin' && (
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-indigo-200 dark:border-indigo-900 flex justify-between items-center mb-4 animate-in fade-in slide-in-from-top-2">
+                        <span className="font-semibold text-gray-700 dark:text-gray-200">
+                            {selectedIds.size} items selected
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleBulkMarkPaid}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                            >
+                                <DollarSign size={18} /> Mark Paid
+                            </button>
+                            <button
+                                onClick={handleBulkDelete}
+                                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+                            >
+                                <Trash2 size={18} /> Delete
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Payment List */}
                 <div className="bg-white/30 dark:bg-gray-900/30 backdrop-blur-xl rounded-lg shadow-xl overflow-hidden border border-white/20 dark:border-white/5">
                     <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -768,6 +859,16 @@ Terima Kasih
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-black/5 dark:bg-white/5">
                                 <tr>
+                                    {userRole === 'admin' && (
+                                        <th className="px-6 py-3 w-10">
+                                            <input
+                                                type="checkbox"
+                                                onChange={handleSelectAll}
+                                                checked={getSortedPayments().length > 0 && selectedIds.size === getSortedPayments().length}
+                                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                        </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                                     <th
                                         onClick={() => sortData('customer')}
@@ -819,7 +920,17 @@ Terima Kasih
                                     <tr><td colSpan="8" className="px-6 py-4 text-center text-gray-500">No payments found</td></tr>
                                 ) : (
                                     getSortedPayments().map((payment) => (
-                                        <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <tr key={payment.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${selectedIds.has(payment.id) ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''}`}>
+                                            {userRole === 'admin' && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.has(payment.id)}
+                                                        onChange={() => handleSelectOne(payment.id)}
+                                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <button
                                                     onClick={async () => {

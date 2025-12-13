@@ -254,3 +254,32 @@ export async function DELETE(request) {
         return NextResponse.json({ error: 'Failed to delete payments' }, { status: 500 });
     }
 }
+
+export async function PATCH(request) {
+    try {
+        const body = await request.json();
+        const { ids, status } = body;
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return NextResponse.json({ error: 'IDs array is required' }, { status: 400 });
+        }
+
+        if (!status) {
+            return NextResponse.json({ error: 'Status is required' }, { status: 400 });
+        }
+
+        const result = await db.payment.updateMany({
+            where: { id: { in: ids } },
+            data: { status: status }
+        });
+
+        return NextResponse.json({
+            success: true,
+            message: `Successfully updated ${result.count} payments`
+        });
+
+    } catch (error) {
+        console.error('Update Error:', error);
+        return NextResponse.json({ error: 'Failed to update payments' }, { status: 500 });
+    }
+}
