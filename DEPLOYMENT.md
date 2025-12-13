@@ -181,6 +181,8 @@ pm2 delete billing    # Remove from PM2
 cd /opt/billing
 git pull origin master
 npm install
+npx prisma generate
+npx prisma db push
 npm run build
 pm2 restart billing
 ```
@@ -192,6 +194,8 @@ cd /opt/billing
 git fetch --all
 git reset --hard origin/master
 npm install
+npx prisma generate
+npx prisma db push
 npm run build
 pm2 restart billing
 ```
