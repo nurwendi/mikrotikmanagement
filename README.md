@@ -115,7 +115,7 @@ pm2 startup
 > ⚠️ **Important**: Change the default password after first login!
 
 ### Port Configuration
-The app runs on port **3000** by default. To run on port 80:
+The app runs on port **2000** by default. To run on port 80:
 
 **Option A: Use authbind (Recommended)**
 ```bash
@@ -138,7 +138,7 @@ server {
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:2000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -213,9 +213,9 @@ pm2 stop billing      # Stop application
 
 ## ❓ Troubleshooting
 
-### Port 3000 Already in Use
+### Port 2000 Already in Use
 ```bash
-lsof -i :3000
+lsof -i :2000
 kill -9 <PID>
 ```
 
