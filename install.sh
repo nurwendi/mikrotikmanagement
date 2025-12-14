@@ -57,5 +57,5 @@ if [ "$PWD" != "$OLDPWD" ] && [ -n "$OLDPWD" ]; then
     echo -e "${YELLOW}👉 NOTE: Please enter the directory first:${NC}"
     echo -e "   cd mikrotikmanagement"
 fi
-echo -e "${GREEN}To start the application, run: npm run dev${NC}"
+echo -e "${GREEN}To start the application, run: npm run dev (Port 1500)${NC}"
 echo -e "${YELLOW}For production deployment, see DEPLOYMENT.md${NC}"

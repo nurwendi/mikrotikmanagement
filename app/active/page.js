@@ -13,7 +13,8 @@ export default function ActiveConnectionsPage() {
     const [searchTerm, setSearchTerm] = useState('');
 
     const { preferences } = useDashboard();
-    const rowsPerPage = preferences?.tables?.rowsPerPage || 25;
+    // Default to 10. Allow changing via UI.
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
     const sortData = (key) => {
@@ -231,7 +232,10 @@ export default function ActiveConnectionsPage() {
                                     </tr>
                                 ) : (
                                     getSortedConnections()
-                                        .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                                        .slice(
+                                            (currentPage - 1) * (rowsPerPage === 'All' ? connections.length : rowsPerPage),
+                                            rowsPerPage === 'All' ? connections.length : currentPage * rowsPerPage
+                                        )
                                         .map((conn, index) => (
                                             <tr key={index} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">
@@ -281,10 +285,38 @@ export default function ActiveConnectionsPage() {
                     </div>
 
                     {/* Pagination Controls */}
+                    {/* Pagination Controls */}
                     <div className="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                        <div className="flex text-sm text-gray-700 dark:text-gray-300">
-                            Showing <span className="font-medium mx-1">{(currentPage - 1) * rowsPerPage + 1}</span> to <span className="font-medium mx-1">{Math.min(currentPage * rowsPerPage, getSortedConnections().length)}</span> of <span className="font-medium mx-1">{getSortedConnections().length}</span> results
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm text-gray-700 dark:text-gray-300">
+                                Showing <span className="font-medium mx-1">
+                                    {(currentPage - 1) * (rowsPerPage === 'All' ? connections.length : rowsPerPage) + 1}
+                                </span>
+                                to
+                                <span className="font-medium mx-1">
+                                    {rowsPerPage === 'All' ? getSortedConnections().length : Math.min(currentPage * rowsPerPage, getSortedConnections().length)}
+                                </span>
+                                of
+                                <span className="font-medium mx-1">{getSortedConnections().length}</span> results
+                            </div>
+
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => {
+                                    const val = e.target.value === 'All' ? 'All' : parseInt(e.target.value);
+                                    setRowsPerPage(val);
+                                    setCurrentPage(1);
+                                }}
+                                className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                            >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                                <option value="All">All</option>
+                            </select>
                         </div>
+
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -294,8 +326,11 @@ export default function ActiveConnectionsPage() {
                                 Previous
                             </button>
                             <button
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(getSortedConnections().length / rowsPerPage)))}
-                                disabled={currentPage >= Math.ceil(getSortedConnections().length / rowsPerPage)}
+                                onClick={() => setCurrentPage(prev => {
+                                    const maxPage = rowsPerPage === 'All' ? 1 : Math.ceil(getSortedConnections().length / rowsPerPage);
+                                    return Math.min(prev + 1, maxPage);
+                                })}
+                                disabled={rowsPerPage === 'All' || currentPage >= Math.ceil(getSortedConnections().length / rowsPerPage)}
                                 className="px-3 py-1 rounded bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next

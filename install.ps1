@@ -32,4 +32,4 @@ npx prisma generate
 npx prisma db push
 
 Write-Host "`n✅ Installation Complete!" -ForegroundColor Green
-Write-Host "To start the application, run: npm run dev" -ForegroundColor Cyan
+Write-Host "To start the application, run: npm run dev (Port 1500)" -ForegroundColor Cyan

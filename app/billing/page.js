@@ -43,6 +43,8 @@ export default function BillingPage() {
     const [baseAmount, setBaseAmount] = useState(0);
     const [isNextMonthIncluded, setIsNextMonthIncluded] = useState(false);
     const [origin, setOrigin] = useState('');
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
 
     // Searchable dropdown state
     const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -919,90 +921,148 @@ Terima Kasih
                                 ) : getSortedPayments().length === 0 ? (
                                     <tr><td colSpan="8" className="px-6 py-4 text-center text-gray-500">No payments found</td></tr>
                                 ) : (
-                                    getSortedPayments().map((payment) => (
-                                        <tr key={payment.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${selectedIds.has(payment.id) ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''}`}>
-                                            {userRole === 'admin' && (
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedIds.has(payment.id)}
-                                                        onChange={() => handleSelectOne(payment.id)}
-                                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                                    />
-                                                </td>
-                                            )}
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button
-                                                    onClick={async () => {
-                                                        setSelectedInvoice(payment);
-
-                                                        await fetchCustomerDetails(payment.username);
-                                                        // Small delay to ensure state is updated
-                                                        setTimeout(() => setShowInvoiceModal(true), 100);
-                                                    }}
-                                                    className="text-blue-600 hover:text-blue-900"
-                                                >
-                                                    View
-                                                </button>
-                                                {payment.status === 'completed' && (
-                                                    <button
-                                                        onClick={() => handleSendWhatsApp(payment)}
-                                                        className="text-green-600 hover:text-green-900 ml-3"
-                                                        title="Kirim WhatsApp"
-                                                    >
-                                                        <MessageCircle size={18} />
-                                                    </button>
-                                                )}
-                                            </td>
-
-
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                <div>
-                                                    <div className="font-semibold">{getCustomerName(payment.username)}</div>
-                                                    {customersData[payment.username]?.name && (
-                                                        <div className="text-xs text-gray-500 dark:text-gray-400">ID: {payment.username}</div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
-                                                {formatCurrency(payment.amount)}
-                                            </td>
-
-
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${payment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                    payment.status === 'postponed' ? 'bg-orange-100 text-orange-800' :
-                                                        payment.status === 'merged' ? 'bg-gray-100 text-gray-500' :
-                                                            'bg-yellow-100 text-yellow-800'
-                                                    }`}>
-                                                    {payment.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                                {getAgentName(payment.username)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                                {getTechnicianName(payment.username)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                                {formatDate(payment.date)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
+                                    getSortedPayments()
+                                        .slice(
+                                            (currentPage - 1) * (rowsPerPage === 'All' ? getSortedPayments().length : rowsPerPage),
+                                            rowsPerPage === 'All' ? getSortedPayments().length : currentPage * rowsPerPage
+                                        )
+                                        .map((payment) => (
+                                            <tr key={payment.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${selectedIds.has(payment.id) ? 'bg-indigo-50 dark:bg-indigo-900/30' : ''}`}>
                                                 {userRole === 'admin' && (
-                                                    <button
-                                                        onClick={() => handleDeletePayment(payment.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                        title="Hapus Invoice"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedIds.has(payment.id)}
+                                                            onChange={() => handleSelectOne(payment.id)}
+                                                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                        />
+                                                    </td>
                                                 )}
-                                            </td>
-                                        </tr>
-                                    ))
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <button
+                                                        onClick={async () => {
+                                                            setSelectedInvoice(payment);
+
+                                                            await fetchCustomerDetails(payment.username);
+                                                            // Small delay to ensure state is updated
+                                                            setTimeout(() => setShowInvoiceModal(true), 100);
+                                                        }}
+                                                        className="text-blue-600 hover:text-blue-900"
+                                                    >
+                                                        View
+                                                    </button>
+                                                    {payment.status === 'completed' && (
+                                                        <button
+                                                            onClick={() => handleSendWhatsApp(payment)}
+                                                            className="text-green-600 hover:text-green-900 ml-3"
+                                                            title="Kirim WhatsApp"
+                                                        >
+                                                            <MessageCircle size={18} />
+                                                        </button>
+                                                    )}
+                                                </td>
+
+
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                    <div>
+                                                        <div className="font-semibold">{getCustomerName(payment.username)}</div>
+                                                        {customersData[payment.username]?.name && (
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400">ID: {payment.username}</div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                                                    {formatCurrency(payment.amount)}
+                                                </td>
+
+
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${payment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                        payment.status === 'postponed' ? 'bg-orange-100 text-orange-800' :
+                                                            payment.status === 'merged' ? 'bg-gray-100 text-gray-500' :
+                                                                'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                        {payment.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                                    {getAgentName(payment.username)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                                    {getTechnicianName(payment.username)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                                                    {formatDate(payment.date)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
+                                                    {userRole === 'admin' && (
+                                                        <button
+                                                            onClick={() => handleDeletePayment(payment.id)}
+                                                            className="text-red-600 hover:text-red-900"
+                                                            title="Hapus Invoice"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
                                 )}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    <div className="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm text-gray-700 dark:text-gray-300">
+                                Showing <span className="font-medium mx-1">
+                                    {getSortedPayments().length === 0 ? 0 : (currentPage - 1) * (rowsPerPage === 'All' ? getSortedPayments().length : rowsPerPage) + 1}
+                                </span>
+                                to
+                                <span className="font-medium mx-1">
+                                    {rowsPerPage === 'All' ? getSortedPayments().length : Math.min(currentPage * rowsPerPage, getSortedPayments().length)}
+                                </span>
+                                of
+                                <span className="font-medium mx-1">{getSortedPayments().length}</span> results
+                            </div>
+
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => {
+                                    const val = e.target.value === 'All' ? 'All' : parseInt(e.target.value);
+                                    setRowsPerPage(val);
+                                    setCurrentPage(1);
+                                }}
+                                className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                            >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                                <option value="All">All</option>
+                            </select>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 rounded bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage(prev => {
+                                    const maxPage = rowsPerPage === 'All' ? 1 : Math.ceil(getSortedPayments().length / rowsPerPage);
+                                    return Math.min(prev + 1, maxPage);
+                                })}
+                                disabled={rowsPerPage === 'All' || currentPage >= Math.ceil(getSortedPayments().length / rowsPerPage)}
+                                className="px-3 py-1 rounded bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -40,9 +40,15 @@ export default function UsersPage() {
     const [connections, setConnections] = useState([]);
     const [selectedRouterIds, setSelectedRouterIds] = useState([]);
 
+    // Bulk Edit State
+    const [selectedUsers, setSelectedUsers] = useState(new Set());
+    const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+    const [bulkEditData, setBulkEditData] = useState({ agentId: '', technicianId: '' });
+
     // Pagination
     const { preferences } = useDashboard();
-    const rowsPerPage = preferences?.tables?.rowsPerPage || 25;
+    // Default to 10 if not set, allow changing via UI
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
@@ -564,6 +570,59 @@ export default function UsersPage() {
         }
     };
 
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            const allUsernames = getSortedUsers().map(u => u.name);
+            setSelectedUsers(new Set(allUsernames));
+        } else {
+            setSelectedUsers(new Set());
+        }
+    };
+
+    const handleSelectUser = (username) => {
+        const newSelected = new Set(selectedUsers);
+        if (newSelected.has(username)) {
+            newSelected.delete(username);
+        } else {
+            newSelected.add(username);
+        }
+        setSelectedUsers(newSelected);
+    };
+
+    const handleBulkEditSubmit = async (e) => {
+        e.preventDefault();
+        if (!confirm(`Update Staff for ${selectedUsers.size} users?`)) return;
+
+        setLoading(true);
+        try {
+            const res = await fetch('/api/customers/bulk-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    usernames: Array.from(selectedUsers),
+                    agentId: bulkEditData.agentId || undefined,
+                    technicianId: bulkEditData.technicianId || undefined
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message);
+                setShowBulkEditModal(false);
+                setBulkEditData({ agentId: '', technicianId: '' });
+                setSelectedUsers(new Set());
+                fetchCustomersData();
+            } else {
+                alert('Failed to bulk update: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Bulk update error:', error);
+            alert('Error performing bulk update');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const formatBytes = (bytes) => {
         if (!bytes || bytes === 0) return '0 B';
         const k = 1024;
@@ -577,6 +636,14 @@ export default function UsersPage() {
             <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">PPPoE Users</h1>
                 <div className="flex flex-col gap-2 md:flex-row md:gap-2">
+                    {selectedUsers.size > 0 && (
+                        <button
+                            onClick={() => setShowBulkEditModal(true)}
+                            className="w-full md:w-auto bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-purple-700 transition-colors shadow-lg animate-pulse"
+                        >
+                            <UsersIcon size={20} /> Bulk Edit ({selectedUsers.size})
+                        </button>
+                    )}
                     {userRole !== 'staff' && (
                         <button
                             onClick={handleGenerateMissingNumbers}
@@ -715,6 +782,14 @@ export default function UsersPage() {
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-black/5 dark:bg-white/5">
                             <tr>
+                                <th className="px-6 py-3 text-left">
+                                    <input
+                                        type="checkbox"
+                                        onChange={handleSelectAll}
+                                        checked={selectedUsers.size > 0 && selectedUsers.size === getSortedUsers().length}
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                </th>
                                 <th
                                     onClick={() => sortData('status')}
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
@@ -786,9 +861,20 @@ export default function UsersPage() {
                                 </tr>
                             ) : (
                                 getSortedUsers()
-                                    .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                                    .slice(
+                                        (currentPage - 1) * (rowsPerPage === 'All' ? filteredUsers.length : rowsPerPage),
+                                        rowsPerPage === 'All' ? filteredUsers.length : currentPage * rowsPerPage
+                                    )
                                     .map((user) => (
                                         <tr key={user['.id']} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedUsers.has(user.name)}
+                                                    onChange={() => handleSelectUser(user.name)}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {isUserOnline(user.name) ? (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300 border border-green-200 dark:border-green-500/30">
@@ -857,9 +943,36 @@ export default function UsersPage() {
 
                 {/* Pagination Controls */}
                 <div className="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                    <div className="flex text-sm text-gray-700 dark:text-gray-300">
-                        Showing <span className="font-medium mx-1">{(currentPage - 1) * rowsPerPage + 1}</span> to <span className="font-medium mx-1">{Math.min(currentPage * rowsPerPage, getSortedUsers().length)}</span> of <span className="font-medium mx-1">{getSortedUsers().length}</span> results
+                    <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                            Showing <span className="font-medium mx-1">
+                                {users.length === 0 ? 0 : (currentPage - 1) * (rowsPerPage === 'All' ? filteredUsers.length : rowsPerPage) + 1}
+                            </span>
+                            to
+                            <span className="font-medium mx-1">
+                                {rowsPerPage === 'All' ? filteredUsers.length : Math.min(currentPage * rowsPerPage, filteredUsers.length)}
+                            </span>
+                            of
+                            <span className="font-medium mx-1">{filteredUsers.length}</span> results
+                        </div>
+
+                        <select
+                            value={rowsPerPage}
+                            onChange={(e) => {
+                                const val = e.target.value === 'All' ? 'All' : parseInt(e.target.value);
+                                setRowsPerPage(val);
+                                setCurrentPage(1);
+                            }}
+                            className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                        >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                            <option value="All">All</option>
+                        </select>
                     </div>
+
                     <div className="flex gap-2">
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -869,8 +982,11 @@ export default function UsersPage() {
                             Previous
                         </button>
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(getSortedUsers().length / rowsPerPage)))}
-                            disabled={currentPage >= Math.ceil(getSortedUsers().length / rowsPerPage)}
+                            onClick={() => setCurrentPage(prev => {
+                                const maxPage = rowsPerPage === 'All' ? 1 : Math.ceil(filteredUsers.length / rowsPerPage);
+                                return Math.min(prev + 1, maxPage);
+                            })}
+                            disabled={rowsPerPage === 'All' || currentPage >= Math.ceil(filteredUsers.length / rowsPerPage)}
                             className="px-3 py-1 rounded bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next
@@ -1284,6 +1400,80 @@ export default function UsersPage() {
                                     </div>
                                 </div>
                             )}
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            {/* Bulk Edit Modal */}
+            <AnimatePresence>
+                {showBulkEditModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                                <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                    <UsersIcon className="text-purple-500" />
+                                    Bulk Edit Staff
+                                </h3>
+                                <button onClick={() => setShowBulkEditModal(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                    <XCircle size={24} />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleBulkEditSubmit} className="p-6 space-y-4">
+                                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-200 mb-4">
+                                    Assigning staff for <strong>{selectedUsers.size}</strong> selected users. Leave a field empty to keep it unchanged.
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign Agent</label>
+                                    <select
+                                        value={bulkEditData.agentId}
+                                        onChange={(e) => setBulkEditData({ ...bulkEditData, agentId: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    >
+                                        <option value="">-- No Change --</option>
+                                        {systemUsers.filter(u => u.isAgent).map(u => (
+                                            <option key={u.id} value={u.id}>{u.fullName || u.username}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign Technician</label>
+                                    <select
+                                        value={bulkEditData.technicianId}
+                                        onChange={(e) => setBulkEditData({ ...bulkEditData, technicianId: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    >
+                                        <option value="">-- No Change --</option>
+                                        {systemUsers.filter(u => u.isTechnician).map(u => (
+                                            <option key={u.id} value={u.id}>{u.fullName || u.username}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="flex justify-end gap-3 mt-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowBulkEditModal(false)}
+                                        className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                                    >
+                                        {loading ? 'Saving...' : 'Update Users'}
+                                    </button>
+                                </div>
+                            </form>
                         </motion.div>
                     </div>
                 )}

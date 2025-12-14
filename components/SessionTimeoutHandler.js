@@ -32,7 +32,7 @@ export default function SessionTimeoutHandler() {
 
     // Session Logic
     useEffect(() => {
-        if (timeoutMinutes <= 0 || pathname === '/login') return;
+        if (timeoutMinutes <= 0 || pathname === '/login' || pathname.startsWith('/isolir')) return;
 
         let logoutTimer;
 

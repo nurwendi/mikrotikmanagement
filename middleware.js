@@ -10,6 +10,11 @@ export async function middleware(request) {
         return NextResponse.next();
     }
 
+    // Allow public API routes for isolation page
+    if (pathname.startsWith('/api/isolir') || pathname === '/api/app-settings') {
+        return NextResponse.next();
+    }
+
     // Check if user is authenticated
     let token = authToken?.value;
 
