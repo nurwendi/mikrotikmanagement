@@ -62,64 +62,13 @@ export async function GET() {
                 rxBytes: parseInt(iface['rx-byte'] || 0)
             }));
 
+
         // Calculate stats
         const pppoeActive = activeConnections.length;
         const pppoeOffline = allUsers.length - pppoeActive;
         const cpuLoad = parseInt(resource['cpu-load'] || 0);
         const memoryUsed = parseInt(resource['free-memory'] || 0);
         const memoryTotal = parseInt(resource['total-memory'] || 0);
-
-        // Fetch SFP Data
-        let sfpData = [];
-
-        try {
-            // Get all ethernet interfaces to check for SFP status
-            // We use /interface/ethernet/print to get the list of physical ports
-            const ethernetInterfaces = await client.write('/interface/ethernet/print', ['detail']);
-
-            if (ethernetInterfaces.length > 0) {
-                // Check running interfaces to avoid timeout on disconnected ports
-                // Relaxed filter: check all capable interfaces that are enabled
-                const candidateInterfaces = ethernetInterfaces.filter(iface => iface.disabled === 'false' && iface.running === 'true');
-
-                for (const iface of candidateInterfaces) {
-                    try {
-                        // Use raw array syntax to bypass library parameter wrapping issues
-                        const monitorData = await client.write([
-                            '/interface/ethernet/monitor',
-                            `=numbers=${iface['.id'] || iface.name}`,
-                            '=once='
-                        ]);
-
-                        if (monitorData && monitorData[0]) {
-                            const stats = monitorData[0];
-
-                            // Check for ANY SFP indicator. 
-                            const hasSfpKeys = Object.keys(stats).some(k => k.startsWith('sfp-'));
-                            const hasReadings = stats['sfp-rx-power'] || stats['sfp-tx-power'];
-
-                            if (hasSfpKeys || hasReadings) {
-                                sfpData.push({
-                                    name: iface.name,
-                                    present: stats['sfp-module-present'] === 'true',
-                                    txPower: stats['sfp-tx-power'],
-                                    rxPower: stats['sfp-rx-power'],
-                                    temperature: stats['sfp-temperature'],
-                                    voltage: stats['sfp-supply-voltage'],
-                                    current: stats['sfp-bias-current'],
-                                    wavelength: stats['sfp-wavelength']
-                                });
-                            }
-                        }
-                    } catch (err) {
-                        // Silently fail on individual interface errors
-                        console.error(`Failed to monitor ${iface.name}:`, err.message);
-                    }
-                }
-            }
-        } catch (sfpError) {
-            console.error('Error fetching SFP data:', sfpError);
-        }
 
         return NextResponse.json({
             pppoeActive,
@@ -128,9 +77,7 @@ export async function GET() {
             memoryUsed: memoryTotal - memoryUsed,
             memoryTotal,
             temperature,
-            temperature,
             voltage,
-            sfpData, // Include SFP data
             interfaces: interfaceStats // Show all interfaces
         });
     } catch (error) {

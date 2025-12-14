@@ -68,6 +68,7 @@ export default function DashboardContent() {
 
     const fetchStats = useCallback(async () => {
         try {
+            // Fetch critical stats first to unblock UI
             const [dashboardRes, billingRes, agentStatsRes, trafficRes, realtimeRes, tempRes, cpuRes] = await Promise.all([
                 fetch('/api/dashboard/stats'),
                 fetch('/api/billing/stats'),
@@ -113,8 +114,8 @@ export default function DashboardContent() {
                 newStats.memoryUsed = data.memoryUsed;
                 newStats.memoryTotal = data.memoryTotal;
                 newStats.temperature = data.temperature;
-                newStats.voltage = data.voltage; // Add this line
-                newStats.sfpData = data.sfpData; // Ensure this is also mapped if not already
+                newStats.voltage = data.voltage;
+                // sfpData is not here anymore
                 newStats.interfaces = data.interfaces;
             }
 
@@ -150,12 +151,26 @@ export default function DashboardContent() {
                 if (data.history && data.history.length > 0) setCpuHistory(data.history);
             }
 
+            // Update state with critical data first
             setStats(newStats);
             setLastUpdate(new Date());
+            setLoading(false); // Unblock UI here
+
+            // Fetch SFP Data in background
+            fetch('/api/dashboard/sfp')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.sfpData) {
+                        setStats(prev => ({
+                            ...prev,
+                            sfpData: data.sfpData
+                        }));
+                    }
+                })
+                .catch(err => console.error('Failed to fetch SFP stats', err));
 
         } catch (error) {
             console.error('Failed to fetch stats', error);
-        } finally {
             setLoading(false);
         }
     }, [stats]);
