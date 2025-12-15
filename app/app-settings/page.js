@@ -61,7 +61,7 @@ export default function AppSettingsPage() {
             enabled: false,
             highCpu: true,
             cpuThreshold: 80,
-            // sfpCritical: false,
+
             voltageLow: true
         },
         security: {
@@ -870,7 +870,7 @@ export default function AppSettingsPage() {
                                                 </div>
                                             </div>
 
-                                            {/* SFP Alert removed */}
+
 
                                             <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                                                 <input

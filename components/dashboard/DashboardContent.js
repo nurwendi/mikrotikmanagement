@@ -13,8 +13,8 @@ import FinancialStats from './FinancialStats';
 import PppoeStats from './PppoeStats';
 import RealtimeTraffic from './RealtimeTraffic';
 import SystemHealth from './SystemHealth';
-// Charts removed
-// Charts removed
+
+
 
 export default function DashboardContent() {
     const { t } = useLanguage();
@@ -370,7 +370,7 @@ export default function DashboardContent() {
                     <SystemHealth key="system" stats={stats} formatBytes={formatBytes} t={t} />
                 )}
 
-                {/* SFP Stats removed */}
+
 
 
             </AnimatePresence>

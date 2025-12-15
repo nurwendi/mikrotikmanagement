@@ -12,7 +12,7 @@ export function DashboardProvider({ children }) {
                 pppoe: true, // system default
                 realtime: true,
                 system: true,
-                // sfp: false,
+
                 tempChart: true,
                 cpuChart: true,
                 trafficChart: true
@@ -24,7 +24,7 @@ export function DashboardProvider({ children }) {
             enabled: false,
             highCpu: true,
             cpuThreshold: 80,
-            // sfpCritical: false,
+
             voltageLow: true
         },
         tables: {
@@ -121,7 +121,7 @@ export function DashboardProvider({ children }) {
                     pppoe: true,
                     realtime: true,
                     system: true,
-                    // sfp: false,
+
                     tempChart: true,
                     cpuChart: true,
                     trafficChart: true
@@ -132,7 +132,7 @@ export function DashboardProvider({ children }) {
                 enabled: false,
                 highCpu: true,
                 cpuThreshold: 80,
-                // sfpCritical: false,
+
                 voltageLow: true
             }
         };

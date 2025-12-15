@@ -14,7 +14,7 @@ export default function DashboardCustomizer() {
         { id: 'pppoe', label: 'PPPoE Stats', icon: '👥' },
         { id: 'realtime', label: 'Real-time Traffic', icon: '⚡' },
         { id: 'system', label: 'System Health', icon: '🖥️' },
-        // SFP removed
+
     ];
 
     const refreshOptions = [
