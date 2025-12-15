@@ -13,7 +13,7 @@ export default function CustomerDashboard() {
         name: '',
         usage: { download: 0, upload: 0 },
         billing: { status: 'loading', amount: 0, invoice: '' },
-        session: { id: null, uptime: '', active: false, ipAddress: null, rateLimit: null }
+        session: { id: null, uptime: '', active: false, ipAddress: null, currentSpeed: null }
     });
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -83,6 +83,15 @@ export default function CustomerDashboard() {
             .replace('h', ' jam ')
             .replace('m', ' menit ')
             .replace('s', ' detik');
+    };
+
+    const formatBits = (bps) => {
+        const val = parseFloat(bps);
+        if (!val || val <= 0) return '0 bps';
+        const k = 1000;
+        const sizes = ['bps', 'Kbps', 'Mbps', 'Gbps'];
+        const i = Math.floor(Math.log(val) / Math.log(k));
+        return parseFloat((val / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
     const containerVariants = {
@@ -155,20 +164,19 @@ export default function CustomerDashboard() {
                             <span className="font-semibold text-gray-900 dark:text-white">{formatBytes((stats.usage.download || 0) + (stats.usage.upload || 0))}</span>
                         </div>
 
-                        {stats.session.rateLimit && (
+                        {stats.session.currentSpeed && (
                             <div className="py-2">
-                                <span className="text-gray-500 dark:text-gray-400 text-sm block mb-2">Kecepatan Paket</span>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg text-center">
                                         <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Download</div>
                                         <div className="font-bold text-gray-800 dark:text-white">
-                                            {stats.session.rateLimit.split('/')[1] || '-'}
+                                            {formatBits(stats.session.currentSpeed.tx)}
                                         </div>
                                     </div>
                                     <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded-lg text-center">
                                         <div className="text-xs text-green-600 dark:text-green-400 mb-1">Upload</div>
                                         <div className="font-bold text-gray-800 dark:text-white">
-                                            {stats.session.rateLimit.split('/')[0] || '-'}
+                                            {formatBits(stats.session.currentSpeed.rx)}
                                         </div>
                                     </div>
                                 </div>

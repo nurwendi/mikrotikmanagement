@@ -42,10 +42,23 @@ export async function GET(request) {
                 session.active = true;
                 session.ipAddress = active['address'];
 
-                // Extract Rate Limit (e.g. "10M/10M")
-                // Format: rx-rate/tx-rate [burst...]
-                if (active['limit-bytes-in'] || active['rate-limit']) {
-                    session.rateLimit = active['rate-limit'];
+                try {
+                    // Try to monitor the PPPoE interface directly to get real-time speed.
+                    // PPPoE dynamic interfaces are usually named <pppoe-{username}>
+                    const traffic = await client.write('/interface/monitor-traffic', [
+                        `=interface=<pppoe-${username}>`,
+                        '=once='
+                    ]);
+
+                    if (traffic && traffic[0]) {
+                        session.currentSpeed = {
+                            tx: traffic[0]['tx-bits-per-second'] || '0', // Download (Router TX -> Client RX)
+                            rx: traffic[0]['rx-bits-per-second'] || '0'  // Upload (Router RX <- Client TX)
+                        };
+                    }
+                } catch (trafficError) {
+                    console.error('Failed to monitor traffic:', trafficError);
+                    // Silently fail - speed will show 0 or hidden
                 }
             }
         } catch (e) {
