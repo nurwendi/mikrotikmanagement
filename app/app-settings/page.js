@@ -61,7 +61,7 @@ export default function AppSettingsPage() {
             enabled: false,
             highCpu: true,
             cpuThreshold: 80,
-            sfpCritical: true,
+            // sfpCritical: false,
             voltageLow: true
         },
         security: {
@@ -870,18 +870,7 @@ export default function AppSettingsPage() {
                                                 </div>
                                             </div>
 
-                                            <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={preferences.notifications?.sfpCritical !== false}
-                                                    onChange={(e) => setPreferences({
-                                                        ...preferences,
-                                                        notifications: { ...preferences.notifications, sfpCritical: e.target.checked }
-                                                    })}
-                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                />
-                                                SFP Critical Signal Alert (RX &lt; -27 dBm)
-                                            </label>
+                                            {/* SFP Alert removed */}
 
                                             <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                                                 <input

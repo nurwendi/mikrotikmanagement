@@ -14,7 +14,7 @@ import PppoeStats from './PppoeStats';
 import RealtimeTraffic from './RealtimeTraffic';
 import SystemHealth from './SystemHealth';
 // Charts removed
-import SfpStats from './SfpStats';
+// Charts removed
 
 export default function DashboardContent() {
     const { t } = useLanguage();
@@ -156,18 +156,7 @@ export default function DashboardContent() {
             setLastUpdate(new Date());
             setLoading(false); // Unblock UI here
 
-            // Fetch SFP Data in background
-            fetch('/api/dashboard/sfp')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.sfpData) {
-                        setStats(prev => ({
-                            ...prev,
-                            sfpData: data.sfpData
-                        }));
-                    }
-                })
-                .catch(err => console.error('Failed to fetch SFP stats', err));
+            // SFP fetching removed
 
         } catch (error) {
             console.error('Failed to fetch stats', error);
@@ -204,14 +193,7 @@ export default function DashboardContent() {
             }
         }
 
-        // Check SFP
-        if (sfpCritical && stats.sfpData && stats.sfpData.length > 0) {
-            const criticalSfp = stats.sfpData.find(sfp => parseFloat(sfp.rxPower) < -27 && parseFloat(sfp.rxPower) > -50); // Filter out -99 or empty
-            if (criticalSfp && now - lastAlerts.sfp > COOLDOWN) {
-                sendNotification('SFP Critical Signal', `SFP ${criticalSfp.name} signal is weak: ${criticalSfp.rxPower} dBm`);
-                setLastAlerts(prev => ({ ...prev, sfp: now }));
-            }
-        }
+        // SFP check removed
 
         // Check Voltage (assuming 12V/24V system, alert if drops below logical threshold, say 11V)
         if (voltageLow && stats.voltage && parseFloat(stats.voltage) < 11 && parseFloat(stats.voltage) > 0) {
@@ -355,18 +337,7 @@ export default function DashboardContent() {
                     <SystemHealth key="system" stats={stats} formatBytes={formatBytes} t={t} />
                 )}
 
-                {/* SFP Stats */}
-                {visibleWidgets.sfp && stats.sfpData && stats.sfpData.length > 0 && (
-                    <motion.div
-                        key="sfp-stats"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3, delay: 0.25 }}
-                    >
-                        <SfpStats data={stats.sfpData} />
-                    </motion.div>
-                )}
+                {/* SFP Stats removed */}
 
 
             </AnimatePresence>
