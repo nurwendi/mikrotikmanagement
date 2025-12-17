@@ -92,8 +92,11 @@ export async function POST(request) {
             finalUsername = `${prefix}${name}`;
         }
 
-        // If partner, save as pending registration in DB
-        if (userRole === 'partner') {
+        // If staff, partner, or agent, save as pending registration in DB
+        // 'staff' role specifically requested to have approval.
+        // 'agent' and 'partner' usually imply self-service which might also need approval?
+        // Original code had 'partner'. We'll include 'staff'.
+        if (userRole === 'partner' || userRole === 'staff' || userRole === 'agent') {
             const existingReg = await db.registration.findFirst({
                 where: {
                     username: finalUsername,

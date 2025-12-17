@@ -120,82 +120,9 @@ export async function GET(request) {
         // Calculate Stats
         if (currentUser.role === 'admin') {
             // Admin View: All Staff
-            const staffStats = {};
-
-            // 1. Calculate Revenue from Payments
-            payments.forEach(p => {
-                // ... (existing logic)
-            });
-
-            // 2. Calculate Commissions
-            commissions.forEach(comm => {
-                const user = users.find(u => u.id === comm.userId);
-
-                // If it's a "Staff" role (which includes what was partner/agent/tech)
-                // We want to group by them
-                if (user) {
-                    // Start/Update staff stats
-                    if (!staffStats[comm.userId]) {
-                        // Need staff name. fetch user?
-                        // Optimizing: fetch all users upfront or lazy load.
-                        const uName = user.username;
-
-                        staffStats[comm.userId] = {
-                            id: comm.userId,
-                            name: comm.username,
-                            role: 'staff',
-                            paidCount: 0,
-                            unpaidCount: 0,
-                            totalRevenue: 0,
-                            commission: 0
-                        };
-                    }
-
-                    // Add commission
-                    staffStats[comm.userId].commission += comm.amount;
-                }
-            });
-
-            // Re-loop payments to attribute revenue to staff?
-            // This is tricky because payments are by *customers*.
-            // We need to map Customer -> Agent/Tech/Staff
-            payments.forEach(p => {
-                const customerName = p.customerName || p.metadata?.customerName;
-                if (customerName) {
-                    // Find customer in our user list or active connections? 
-                    // We need a way to link Payment -> Agent.
-                    // The Payment model has agentId/technicianId ?
-                    // Let's check schema. Payment has no direct agent link, but it has 'userId' which is who recorded it? No.
-                    // Actually we should look at p.userId if that's the agent. or p.customer.agentId
-
-                    // IF the payment has agent info, or we look up the customer.
-                    // For now, let's assume we can match via commission logic which already happened.
-
-                    // Actually, let's just stick to the Commission loop for revenue if possible, 
-                    // OR if we have the agentId in the payment (if we added it).
-                    // Schema check: Payment has 'collectedBy'.
-                }
-            });
-
-            // Using the existing logic which seemed to rely on commissions to track "stats" mostly?
-            // The previous code had:
-            /*
-                 commissions.forEach(comm => {
-                    // ...
-                    // Checks Agent -> adds to partnerStats[agentId]
-                 });
-            */
-            // Let's just preserve the exact logic but rename the variable.
-
-            // RE-READING THE ORIGINAL CODE via view_file would be safer before a big replace.
-            // I will simply rename the key usage in the return.
-
+            const partnerStats = {};
             let grandTotalRevenue = 0;
             let grandTotalCommission = 0;
-
-            // Fetch all customers for mapping fallback (if needed, but commissions table has username/userId)
-            // But we need to group by PARTNER.
-            // Iterate payments -> commissions
 
             for (const p of filteredPayments) {
                 if (p.status === 'completed') {
@@ -206,10 +133,6 @@ export async function GET(request) {
                 for (const comm of p.commissions) {
                     // Start/Update partner stats
                     if (!partnerStats[comm.userId]) {
-                        // Need partner name. fetch user?
-                        // Optimizing: fetch all partners upfront or lazy load.
-                        // Lazy load implies N+1.
-                        // Let's rely on info in commission if we stored it? We stored username.
                         partnerStats[comm.userId] = {
                             id: comm.userId,
                             name: comm.username,
@@ -223,23 +146,6 @@ export async function GET(request) {
 
                     if (p.status === 'completed') {
                         partnerStats[comm.userId].commission += comm.amount;
-                        // Revenue attribution
-                        // If role is agent, attrib revenue. If tech, attrib revenue only if not agent?
-                        // This is tricky aggregation.
-                        // Simplified: If commission exists, attrib revenue to that partner? 
-                        // But if both Agent and Tech exist and differ, revenue is counted twice?
-                        // Original code: "Combined Revenue".
-                        // Logic: Agent gets revenue. Tech gets revenue.
-                        // Wait, original code:
-                        // "if (isAgent) totalRevenue += amount"
-                        // "if (isTechnician && !countedRevenue) totalRevenue += amount" where countedRevenue true if agentId==userId.
-
-                        // In Admin view loop:
-                        // It iterates filteredPayments.
-                        // Checks Agent -> adds to partnerStats[agentId]
-                        // Checks Tech -> adds to partnerStats[techId]
-                        // So yes, revenue can be counted for multiple partners for same txn.
-
                         partnerStats[comm.userId].totalRevenue += p.amount;
                         partnerStats[comm.userId].paidCount += 1;
                         grandTotalCommission += comm.amount;
@@ -247,14 +153,7 @@ export async function GET(request) {
                         partnerStats[comm.userId].unpaidCount += 1;
                     }
                 }
-
-                // Handle payments with NO commissions (e.g. direct admin)?
-                // GrandTotalRevenue captures all.
             }
-
-            // Note: The above loop only captures stats for payments that HAVE commissions.
-            // If we want stats for partners even if they have 0 commissions (e.g. potential), we'd need to fetch customers.
-            // But stats usually imply activity.
 
             return NextResponse.json({
                 role: 'admin',
@@ -268,7 +167,6 @@ export async function GET(request) {
                     filteredPaymentsCount: filteredPayments.length
                 }
             });
-
         } else if (currentUser.role === 'staff' || currentUser.role === 'agent' || currentUser.role === 'technician') {
             // Staff View
             const myStats = {

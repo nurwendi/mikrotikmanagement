@@ -374,7 +374,14 @@ export default function UsersPage() {
                     password: formData.password,
                     profile: formData.profile,
                     service: formData.service,
-                    routerIds: selectedRouterIds
+                    routerIds: selectedRouterIds,
+                    // Additional fields for registration approval
+                    customerName: formData.customerName,
+                    customerAddress: formData.customerAddress,
+                    customerPhone: formData.customerPhone,
+                    customerEmail: formData.customerEmail,
+                    agentId: formData.agentId,
+                    technicianId: formData.technicianId
                 }),
             });
 
