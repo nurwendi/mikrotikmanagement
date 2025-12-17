@@ -3,6 +3,46 @@ import db from '@/lib/db';
 import { getUserFromRequest } from '@/lib/api-auth';
 import { sendPaymentReceiptEmail } from '@/lib/email';
 
+// Helper to calculate commissions
+async function calculateCommissions(amount, username) {
+    const commissionsData = [];
+    const customer = await db.customer.findUnique({ where: { username } });
+
+    if (customer) {
+        if (customer.agentId) {
+            const agent = await db.user.findUnique({ where: { id: customer.agentId } });
+            // Allow if isAgent is true OR role is 'staff' (so staff acting as agent get commission)
+            if (agent && (agent.isAgent || agent.role === 'staff') && agent.agentRate > 0) {
+                const commissionAmount = (amount * agent.agentRate) / 100;
+                commissionsData.push({
+                    userId: agent.id,
+                    username: agent.username,
+                    role: 'agent',
+                    rate: agent.agentRate,
+                    amount: commissionAmount
+                });
+            }
+        }
+
+        if (customer.technicianId) {
+            const technician = await db.user.findUnique({ where: { id: customer.technicianId } });
+            // Allow if isTechnician is true OR role is 'staff'
+            if (technician && (technician.isTechnician || technician.role === 'staff') && technician.technicianRate > 0) {
+                const commissionAmount = (amount * technician.technicianRate) / 100;
+                commissionsData.push({
+                    userId: technician.id,
+                    username: technician.username,
+                    role: 'technician',
+                    rate: technician.technicianRate,
+                    amount: commissionAmount
+                });
+            }
+        }
+    }
+
+    return commissionsData;
+}
+
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
@@ -75,41 +115,9 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Username and amount are required' }, { status: 400 });
         }
 
-        const customer = await db.customer.findUnique({ where: { username: body.username } });
-        // NOTE: commissions logic requires fetching agent/tech user details.
-
-        let commissionsData = [];
+        // Calculate commissions
         const amount = Number(body.amount);
-
-        if (customer) {
-            if (customer.agentId) {
-                const agent = await db.user.findUnique({ where: { id: customer.agentId } });
-                if (agent && agent.isAgent && agent.agentRate > 0) {
-                    const commissionAmount = (amount * agent.agentRate) / 100;
-                    commissionsData.push({
-                        userId: agent.id,
-                        username: agent.username,
-                        role: 'agent',
-                        rate: agent.agentRate,
-                        amount: commissionAmount
-                    });
-                }
-            }
-
-            if (customer.technicianId) {
-                const technician = await db.user.findUnique({ where: { id: customer.technicianId } });
-                if (technician && technician.isTechnician && technician.technicianRate > 0) {
-                    const commissionAmount = (amount * technician.technicianRate) / 100;
-                    commissionsData.push({
-                        userId: technician.id,
-                        username: technician.username,
-                        role: 'technician',
-                        rate: technician.technicianRate,
-                        amount: commissionAmount
-                    });
-                }
-            }
-        }
+        const commissionsData = await calculateCommissions(amount, body.username);
 
         // Generate Invoice Number if not present
         let invoiceNumber = body.invoiceNumber;
@@ -117,13 +125,11 @@ export async function POST(request) {
             const now = new Date();
             const yy = String(now.getFullYear()).slice(-2);
             const mm = String(now.getMonth() + 1).padStart(2, '0');
+            
+            const customer = await db.customer.findUnique({ where: { username: body.username } });
             const custNumber = customer?.customerNumber || '0000';
 
-            // Sequence: Needs to be unique for this Customer in this Month? Or global?
-            // Original code: `String(payments.length + 1).padStart(4, '0')`. That was global sequence.
-            // DB approach: Count payments for this month/year? Or just fetch last payment?
-            // Let's count all payments to keep behavior roughly similar (though potentially race-conditioned).
-            // Better: use count()
+            // Sequence
             const count = await db.payment.count();
             const seq = String(count + 1).padStart(4, '0');
             invoiceNumber = `INV/${yy}/${mm}/${custNumber}/${seq}`;
@@ -207,6 +213,8 @@ export async function POST(request) {
             console.error('Failed to add payment notification:', notifError);
         }
 
+        // Send Email
+        const customer = await db.customer.findUnique({ where: { username: body.username } });
         if (customer && customer.email) {
             try {
                 await sendPaymentReceiptEmail(customer.email, {
@@ -268,14 +276,49 @@ export async function PATCH(request) {
             return NextResponse.json({ error: 'Status is required' }, { status: 400 });
         }
 
-        const result = await db.payment.updateMany({
-            where: { id: { in: ids } },
-            data: { status: status }
-        });
+        let updatedCount = 0;
+
+        if (status === 'completed') {
+            // Bulk Mark Paid - Needs commission calculation
+            // Fetch all payments first
+            const payments = await db.payment.findMany({
+                where: { id: { in: ids } }
+            });
+
+            for (const payment of payments) {
+                // Determine if we should process it
+                // We process if it's not completed OR if we want to ensure commissions are present?
+                // Standard behavior: Only update pending to completed.
+                // Re-calculating completed ones might be risky if already paid out.
+                if (payment.status !== 'completed') {
+                    const commissionsData = await calculateCommissions(payment.amount, payment.username);
+                    
+                    await db.payment.update({
+                        where: { id: payment.id },
+                        data: { 
+                            status: status,
+                            date: new Date(), // Update payment date to now
+                            commissions: {
+                                deleteMany: {},
+                                create: commissionsData
+                            }
+                        }
+                    });
+                    updatedCount++;
+                }
+            }
+        } else {
+            // Normal update (e.g. to 'pending' or 'cancelled')
+            const result = await db.payment.updateMany({
+                where: { id: { in: ids } },
+                data: { status: status }
+            });
+            updatedCount = result.count;
+        }
 
         return NextResponse.json({
             success: true,
-            message: `Successfully updated ${result.count} payments`
+            message: `Successfully processed payments`
         });
 
     } catch (error) {

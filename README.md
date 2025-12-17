@@ -201,14 +201,48 @@ chmod +x update.sh
 
 ### Auto Remove / Reset
 To uninstall or reset the application (clears database and node_modules):
+
+**Linux / Mac**
 ```bash
 chmod +x uninstall.sh
 ./uninstall.sh
+```
+
+**Windows**
+```powershell
+.\uninstall.ps1
 ```
 To reset ONLY data (keep config):
 ```bash
 node scripts/reset-data.js
 ```
+
+### Manual Removal (Linux)
+If you prefer to remove the application manually or if the script fails:
+
+1. **Stop the Application**
+   ```bash
+   pm2 stop billing
+   pm2 delete billing
+   ```
+
+2. **Remove Application Files**
+   ```bash
+   # Remove dependencies and build output
+   rm -rf node_modules .next
+   
+   # Remove database
+   rm prisma/dev.db prisma/dev.db-journal
+   
+   # Rename configuration (optional backup)
+   mv .env .env.bak
+   ```
+
+3. **Delete Repository (Optional)**
+   ```bash
+   cd ..
+   rm -rf billing
+   ```
 
 ### PM2 Commands
 ```bash
